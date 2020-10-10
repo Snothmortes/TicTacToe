@@ -7,7 +7,7 @@ namespace Game
     {
         private PictureBox _picBox;
         public SetCrossCommand(PictureBox picBox) => _picBox = picBox;
-        public void ExecuteAction() => _picBox.Image = Image.FromFile(@"\..\cross.bmp");
+        public void ExecuteAction() => _picBox.Image = Image.FromFile(@"..\..\cross.bmp");
         public void RedoAction() => ExecuteAction();
         public void UndoAction()
         {
