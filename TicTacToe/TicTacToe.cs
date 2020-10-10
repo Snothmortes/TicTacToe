@@ -40,12 +40,23 @@ namespace Game
                     ResetGame();
             }
         }
-        private void PlayerTurn(PictureBox picBox)
+        private void TakeTurn(PictureBox picBox)
         {
+            var square = new Random();
+
             if (player == 1)
                 Execute(cm as CommandManager, new SetCrossCommand(picBox), picBox);
             else
-                Execute(cm as CommandManager, new SetCircleCommand(picBox), picBox);
+            {
+                while (true)
+                    if (board[square.Next(0,8)] == 0)
+                        break;
+
+                foreach (PictureBox item in panel1.Controls)
+                    if (item.Name == "pictureBox" + square.ToString())
+                        Execute(cm as CommandManager, new SetCircleCommand(item), item);
+
+            }
         }
         private void NextTurn()
         {
@@ -113,12 +124,19 @@ namespace Game
                 PictureBox picBox = (PictureBox)sender;
                 if (picBox.Image == null)
                 {
-                    PlayerTurn(picBox);
+                    TakeTurn(picBox);
                     NextTurn();
-                    //AITurn();
                 }
             };
         }
+
+        private void AITurn()
+        {
+            var square = new Random(9);
+
+
+        }
+
         private void OnButtonClick(Control control)
         {
             control.Click += (sender, e) =>
