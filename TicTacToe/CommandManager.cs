@@ -25,6 +25,7 @@ namespace Game
             _command.ExecuteAction();
             _redo.Clear();
             undoEnabled = true;
+            redoEnabled = false;
         }
 
         public void Reset()
