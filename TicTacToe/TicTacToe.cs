@@ -1,4 +1,6 @@
 ﻿using System;
+using System.ComponentModel;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
@@ -40,29 +42,32 @@ namespace Game
                     ResetGame();
             }
         }
-        private void TakeTurn(PictureBox picBox)
+        private void PlayerTurn(PictureBox picBox) => Execute(cm, new SetCrossCommand(picBox), picBox);
+        private void AITurn()
         {
+            if (Array.TrueForAll(board, a => a != 0))
+                return;
+
             var square = new Random();
-
-            if (player == 1)
-                Execute(cm as CommandManager, new SetCrossCommand(picBox), picBox);
-            else
+            int i = 0;
+            while (true)
             {
-                while (true)
-                    if (board[square.Next(0,8)] == 0)
-                        break;
+                i = square.Next(0, 8);
+                if (board[i] == 0)
+                    break;
+            }
 
-                foreach (PictureBox item in panel1.Controls)
-                    if (item.Name == "pictureBox" + square.ToString())
-                        Execute(cm as CommandManager, new SetCircleCommand(item), item);
-
+            foreach (PictureBox item in panel1.Controls)
+            {
+                var j = i + 1;
+                if (item.Name == "pictureBox" + j)
+                    Execute(cm, new SetCircleCommand(item), item);
             }
         }
         private void NextTurn()
         {
             EvaluateMove();
             player = player == 1 && !(Winner() || StartOfGame()) ? 2 : 1;
-            RefreshButtons();
         }
         private bool Winner()
         {
@@ -87,8 +92,8 @@ namespace Game
         private bool StartOfGame() => Array.TrueForAll(board, a => a == 0);
         private void ResetGame()
         {
-            cm.Reset();
             board = new int[9];
+            Reset();
             player = 1;
         }
         private void Execute(CommandManager commandManager, ICommand command, PictureBox picBox)
@@ -103,12 +108,16 @@ namespace Game
         {
             board = new int[9];
             foreach (Control control in panel1.Controls)
+            {
+                OnLoadCompleted(control);
                 OnMouseClick(control);
+            }
             foreach (Control control in this.Controls)
                 if (control.GetType() == typeof(Button))
                     OnButtonClick(control);
             this.undoToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.Z;
             this.redoToolStripMenuItem.ShortcutKeys = Keys.Control | Keys.Y;
+
         }
         private void RefreshButtons()
         {
@@ -124,17 +133,10 @@ namespace Game
                 PictureBox picBox = (PictureBox)sender;
                 if (picBox.Image == null)
                 {
-                    TakeTurn(picBox);
-                    NextTurn();
+                    PlayerTurn(picBox);
+                    AITurn();
                 }
             };
-        }
-
-        private void AITurn()
-        {
-            var square = new Random(9);
-
-
         }
 
         private void OnButtonClick(Control control)
@@ -151,7 +153,7 @@ namespace Game
                         Redo();
                         break;
                     case "reset":
-                        cm.Reset();
+                        Reset();
                         break;
                 }
             };
@@ -170,26 +172,25 @@ namespace Game
                         break;
                 }
             }
-            RefreshButtons();
         }
+
+        private void Undo() => cm.UndoCommand();
+        private void Redo() => cm.RedoCommand();
+        private void Reset() => cm.Reset();
+
         private void undoToolStripMenuItem_Click(object sender, EventArgs e) => Undo();
         private void redoToolStripMenuItem_Click(object sender, EventArgs e) => Redo();
-        private void Undo()
+        private void resetToolStripMenuItem_Click(object sender, EventArgs e) => Reset();
+
+        private void OnLoadCompleted(Control control)
         {
-            cm.UndoCommand();
-            player = player == 1 ? 2 : 1;
-            RefreshButtons();
-        }
-        private void Redo()
-        {
-            cm.RedoCommand();
-            player = player == 1 ? 2 : 1;
-            RefreshButtons();
-        }
-        private void resetToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            cm.Reset();
-            RefreshButtons();
+            var pb = control as PictureBox;
+            pb.ImageChanged += (sender, e) =>
+            {
+                NextTurn();
+                RefreshButtons();
+                Debug.WriteLine(player);
+            };
         }
     }
 }
